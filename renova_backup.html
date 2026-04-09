@@ -1,0 +1,1746 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RENOVA – Decorate, Reuse, Renew</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Config for Tailwind Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        renova: {
+                            green: '#4A7C59',
+                            lightGreen: '#A4C3B2',
+                            beige: '#F5F1E8',
+                            cream: '#EFECE6',
+                            dark: '#1E293B',
+                            accent: '#D4A373'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'card': '0 2px 8px rgba(0,0,0,0.06)',
+                        'sidebar': '4px 0 24px rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- CUSTOM 3D BALLOON ANIMATION (HOME ONLY) --- */
+        #balloon-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #F5F1E8 0%, #EFECE6 100%);
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        #balloon-bg.active {
+            opacity: 1;
+        }
+
+        .balloon-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        .balloon {
+            position: absolute;
+            bottom: -150px;
+            width: 60px;
+            height: 75px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0) 20%),
+                        var(--b-color);
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.1), 
+                        2px 5px 10px rgba(0,0,0,0.1);
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+            animation: floatUp3D linear infinite;
+        }
+
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 8px;
+            background: var(--b-color);
+            border-radius: 3px;
+        }
+
+        .balloon::before {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 50px;
+            background: rgba(0,0,0,0.15);
+        }
+
+        @keyframes floatUp3D {
+            0% { transform: translateY(0) translateX(0) translateZ(0) rotateY(0deg) rotateX(0deg) scale(0.8); opacity: 0; }
+            10% { opacity: 0.6; }
+            50% { transform: translateY(-50vh) translateX(var(--drift)) translateZ(30px) rotateY(180deg) rotateX(20deg) scale(1); }
+            100% { transform: translateY(-120vh) translateX(var(--drift-end)) translateZ(60px) rotateY(360deg) rotateX(40deg) scale(1.1); opacity: 0; }
+        }
+
+        /* --- GLOBAL STYLES --- */
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 50; }
+        .toast { transform: translateX(100%); transition: transform 0.3s ease-out; }
+        .toast.show { transform: translateX(0); }
+
+        /* --- ADMIN PANEL OVERRIDES --- */
+        /* When in admin mode, hide the standard header/footer */
+        body.admin-mode header,
+        body.admin-mode footer {
+            display: none !important;
+        }
+        
+        /* Ensure admin panel takes full height */
+        body.admin-mode {
+            overflow: hidden; /* Prevent body scroll, use container scroll */
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Active Sidebar Link Style */
+        .sidebar-link.active {
+            background-color: #EFECE6; /* renova-cream */
+            color: #4A7C59; /* renova-green */
+            border-right: 3px solid #4A7C59;
+        }
+    </style>
+</head>
+<body class="bg-renova-beige text-renova-dark font-sans antialiased overflow-x-hidden flex flex-col min-h-screen relative transition-all duration-300">
+
+    <!-- 3D BALLOON BACKGROUND -->
+    <div id="balloon-bg">
+        <div id="balloon-scene" class="balloon-container"></div>
+    </div>
+
+    <!-- Navigation -->
+    <header id="main-header" class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-40 relative">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" onclick="router('home')" class="flex items-center gap-2 group">
+                <div class="w-8 h-8 bg-renova-green rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:rotate-12 transition-transform">R</div>
+                <span class="text-xl font-bold text-renova-green tracking-tight">RENOVA</span>
+            </a>
+
+            <nav class="hidden md:flex space-x-8">
+                <button onclick="router('home')" class="nav-link hover:text-renova-green font-medium transition-colors">Home</button>
+                <button onclick="router('about')" class="nav-link hover:text-renova-green font-medium transition-colors">About Us</button>
+                <button onclick="router('categories')" class="nav-link hover:text-renova-green font-medium transition-colors">Categories</button>
+                <button onclick="router('sustainability')" class="nav-link hover:text-renova-green font-medium transition-colors text-renova-green"><i class="fas fa-leaf mr-1"></i> Eco-Impact</button>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <button onclick="router('dashboard')" class="hover:text-renova-green"><i class="fas fa-user"></i></button>
+                
+                <!-- ADMIN BUTTON (Conditionally Rendered via JS below) -->
+                <button id="admin-nav-btn" onclick="router('admin')" class="hidden bg-renova-dark text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-black transition-all shadow-md">
+                    <i class="fas fa-shield-alt mr-1"></i> Admin Panel
+                </button>
+
+                <button onclick="router('booking')" class="bg-renova-green text-white px-5 py-2 rounded-full font-medium hover:bg-opacity-90 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    Book Now
+                </button>
+            </div>
+
+            <button onclick="toggleMobileMenu()" class="md:hidden text-2xl text-renova-dark">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 p-4 absolute w-full shadow-lg">
+            <div class="flex flex-col space-y-3">
+                <button onclick="router('home'); toggleMobileMenu()" class="text-left py-2 border-b border-gray-50">Home</button>
+                <button onclick="router('about'); toggleMobileMenu()" class="text-left py-2 border-b border-gray-50">About Us</button>
+                <button onclick="router('categories'); toggleMobileMenu()" class="text-left py-2 border-b border-gray-50">Categories</button>
+                <button onclick="router('dashboard'); toggleMobileMenu()" class="text-left py-2 border-b border-gray-50">My Dashboard</button>
+                <button onclick="router('contact'); toggleMobileMenu()" class="text-left py-2">Contact Us</button>
+                <button onclick="router('booking'); toggleMobileMenu()" class="bg-renova-green text-white py-3 rounded-lg mt-2">Book Now</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="app-container" class="flex-grow w-full relative z-10">
+        <!-- Views injected here -->
+    </main>
+
+    <footer id="main-footer" class="bg-renova-dark text-white pt-12 pb-6 mt-12 relative z-10">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-6 h-6 bg-renova-lightGreen rounded-full flex items-center justify-center text-renova-dark font-bold text-sm">R</div>
+                        <span class="text-lg font-bold">RENOVA</span>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed">Decorate, Reuse, Renew. Making celebrations sustainable.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-renova-lightGreen">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><button onclick="router('themes')" class="hover:text-white">Explore Themes</button></li>
+                        <li><button onclick="router('sustainability')" class="hover:text-white">Sustainability</button></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-renova-lightGreen">Contact</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><i class="fas fa-envelope mr-2"></i> hello@renova.com</li>
+                        <li><i class="fas fa-phone mr-2"></i> +91 98765 43210</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-6 text-center text-xs text-gray-500">
+                &copy; 2023 RENOVA. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast-container"></div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- ACTUAL THEME IMAGES (Unsplash) ---
+        const themeImages = {
+            // Birthday & Anniversary
+            "Princess Theme..👸": [
+                "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=600&h=400&fit=crop"
+            ],
+            "Unicorn Theme..🦄": [
+                "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=400&fit=crop"
+            ],
+            "Romantic Candle theme..🕯️😍": [
+                "https://images.unsplash.com/photo-1519225468850-7251d0e8d67e?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&h=400&fit=crop"
+            ],
+            "Golden Anniversary Stage..✨": [
+                "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1478146059778-26028b07395a?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=400&fit=crop"
+            ],
+            "Kids Cartoon Theme..🤩�": [
+                "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop"
+            ],
+            // Festival
+            "Diwali Floral Decor🎇🎉": [
+                "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop"
+            ],
+            "Ganesh Chaturthi Setup🙏🏻🤩": [
+                "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop"
+            ],
+            "Navratri Garba Theme🎇": [
+                "https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop"
+            ],
+            "Makar Sankranti/ Bornhahan 🎉": [
+                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop"
+            ],
+            "Holi Color Splash🎨": [
+                "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop"
+            ],
+            // Housewarming & Baby Shower
+            "Griha Pravesh Traditional🏡✨": [
+                "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop"
+            ],
+            "Suhagraat Decoration😍🏡": [
+                "https://images.unsplash.com/photo-1519225468850-7251d0e8d67e?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&h=400&fit=crop"
+            ],
+            "Baby Shower Teddy Theme🧸😍/Little Krishna👶🏻😍": [
+                "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop"
+            ],
+            "Welcome Baby Setup 👶🏻🎉": [
+                "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop"
+            ],
+            "Rainbow Theme🌈/Moon🌙 & Stars✨": [
+                "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+                "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop"
+            ]
+        };
+
+        // Category cover images
+        const categoryImages = {
+            "Birthday & Anniversary": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop",
+            "Festival": "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=400&h=300&fit=crop",
+            "Housewarming & Baby Shower": "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&h=300&fit=crop"
+        };
+
+        // --- DATA STRUCTURE (THEMES -> VARIATIONS) ---
+        const themeDataStructure = {
+    "Birthday & Anniversary": [
+        "Princess Theme..👸",
+        "Unicorn Theme..🦄", 
+        "Romantic Candle theme..🕯️😍",
+        "Golden Anniversary Stage..✨",
+        "Kids Cartoon Theme..🤩🃏"
+    ],
+
+    "Festival": [
+        "Diwali Floral Decor🎇🎉",
+        "Ganesh Chaturthi Setup🙏🏻🤩",
+        "Navratri Garba Theme🎇",
+         "Makar Sankranti/ Bornhahan 🎉",
+        "Holi Color Splash🎨"
+    ],
+
+    "Housewarming & Baby Shower": [
+        "Griha Pravesh Traditional🏡✨",
+         "Suhagraat Decoration😍🏡",
+        "Baby Shower Teddy Theme🧸😍/Little Krishna👶🏻😍",
+        "Welcome Baby Setup 👶🏻🎉",
+         "Rainbow Theme🌈/Moon🌙 & Stars✨"
+    ]
+};
+
+        const categories = Object.keys(themeDataStructure);
+        const variationNames = ["Classic", "Premium",  "Minimalist"];
+
+        // This array holds the Parent Themes
+        let themesData = [];
+
+        // --- DATA GENERATION LOGIC ---
+        categories.forEach((cat, catIndex) => {
+            const names = themeDataStructure[cat];
+            names.forEach((name, index) => {
+                const basePrice = 3000 + Math.floor(Math.random() * 4000);
+                const parentId = parseInt(`${catIndex}${index}`);
+                
+                // Get actual images for this theme
+                const imgs = themeImages[name] || [
+                    "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop",
+                    "https://images.unsplash.com/photo-1519225468850-7251d0e8d67e?w=600&h=400&fit=crop",
+                    "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=400&fit=crop"
+                ];
+
+                // Generate Variations (Sub-Themes) for each Parent Theme
+                const variations = variationNames.map((vName, vIndex) => {
+                    const subId = parseInt(`${parentId}${vIndex}`);
+                    const varPrice = basePrice + (vIndex * 500);
+
+                    return {
+                        id: subId,
+                        name: `${name} - ${vName}`,
+                        category: cat,
+                        price: varPrice,
+                        image: imgs[0],
+                        gallery: imgs,
+                        items: ["Eco-Friendly Banners", "Reusable Props", "Sustainable Lighting"],
+                        eco: true,
+                        rating: (4.0 + Math.random()).toFixed(1),
+                        parentId: parentId
+                    };
+                });
+
+                themesData.push({
+                    id: parentId,
+                    name: name,
+                    category: cat,
+                    // We use the first variation's image as the thumbnail for the parent
+                    image: variations[0].image, 
+                    variations: variations // Store the 8-10 options here
+                });
+            });
+        });
+
+        // --- STATE ---
+        const state = {
+            currentTheme: null,   // Holds the final selected Sub-Theme
+            selectedParent: null,  // Holds the Parent Theme (for back navigation)
+            user: { name: "Alex Johnson", history: [] },
+            adminTab: 'dashboard' // Track active admin tab
+        };
+let adminOrders = [];
+let adminUsers = [];
+
+// --- DUMMY DATA FOR ADMIN PANEL ---
+const dummyOrders = [
+    { id: 1001, name: "Priya Sharma", email: "priya@gmail.com", phone: "9876543210", theme_name: "Princess Theme - Classic", event_date: "2026-04-15", time_slot: "Evening", order_status: "Confirmed", payment_status: "Paid" },
+    { id: 1002, name: "Rahul Mehta", email: "rahul@gmail.com", phone: "9123456789", theme_name: "Diwali Floral Decor - Premium", event_date: "2026-04-20", time_slot: "Full Day", order_status: "Pending", payment_status: "Pending" },
+    { id: 1003, name: "Sneha Patel", email: "sneha@gmail.com", phone: "9988776655", theme_name: "Baby Shower Teddy Theme - Minimalist", event_date: "2026-05-02", time_slot: "Morning", order_status: "Pending", payment_status: "Pending" },
+    { id: 1004, name: "Amit Joshi", email: "amit@gmail.com", phone: "9765432100", theme_name: "Golden Anniversary Stage - Premium", event_date: "2026-04-28", time_slot: "Evening", order_status: "Confirmed", payment_status: "Paid" },
+    { id: 1005, name: "Kavya Nair", email: "kavya@gmail.com", phone: "9654321098", theme_name: "Navratri Garba Theme - Classic", event_date: "2026-05-10", time_slot: "Full Day", order_status: "Rejected", payment_status: "Pending" },
+    { id: 1006, name: "Rohan Desai", email: "rohan@gmail.com", phone: "9543210987", theme_name: "Griha Pravesh Traditional - Classic", event_date: "2026-05-15", time_slot: "Morning", order_status: "Pending", payment_status: "Pending" },
+    { id: 1007, name: "Ananya Singh", email: "ananya@gmail.com", phone: "9432109876", theme_name: "Unicorn Theme - Premium", event_date: "2026-04-22", time_slot: "Evening", order_status: "Confirmed", payment_status: "Paid" },
+    { id: 1008, name: "Vikram Rao", email: "vikram@gmail.com", phone: "9321098765", theme_name: "Romantic Candle theme - Minimalist", event_date: "2026-05-05", time_slot: "Evening", order_status: "Pending", payment_status: "Pending" }
+];
+
+const dummyUsers = [
+    { id: 1, name: "Priya Sharma", email: "priya@gmail.com", phone: "9876543210", bookings: 2 },
+    { id: 2, name: "Rahul Mehta", email: "rahul@gmail.com", phone: "9123456789", bookings: 1 },
+    { id: 3, name: "Sneha Patel", email: "sneha@gmail.com", phone: "9988776655", bookings: 1 },
+    { id: 4, name: "Amit Joshi", email: "amit@gmail.com", phone: "9765432100", bookings: 3 },
+    { id: 5, name: "Kavya Nair", email: "kavya@gmail.com", phone: "9654321098", bookings: 1 },
+    { id: 6, name: "Rohan Desai", email: "rohan@gmail.com", phone: "9543210987", bookings: 1 },
+    { id: 7, name: "Ananya Singh", email: "ananya@gmail.com", phone: "9432109876", bookings: 2 },
+    { id: 8, name: "Vikram Rao", email: "vikram@gmail.com", phone: "9321098765", bookings: 1 }
+];
+
+function loadAdminData() {
+    fetch("/api/admin/bookings")
+        .then(res => res.json())
+        .then(data => {
+            adminOrders = data;
+            document.getElementById('app-container').innerHTML = views.admin();
+        })
+        .catch(() => {
+            // Use dummy data if API fails
+            adminOrders = [...dummyOrders];
+            document.getElementById('app-container').innerHTML = views.admin();
+        });
+}
+        // --- BALLOON ANIMATION LOGIC ---
+        let balloonsInitialized = false;
+        function initBalloons() {
+            if (balloonsInitialized) return;
+            const scene = document.getElementById('balloon-scene');
+            const colors = ['#4A7C59', '#A4C3B2', '#D4A373', '#EFECE6', '#8FBC8F', '#C2B280']; 
+            for (let i = 0; i < 20; i++) {
+                const balloon = document.createElement('div');
+                balloon.classList.add('balloon');
+                const left = Math.random() * 100;
+                const duration = 15 + Math.random() * 25;
+                const delay = Math.random() * -20;
+                const size = 0.5 + Math.random() * 0.6;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const drift = (Math.random() - 0.5) * 300 + 'px';
+                const driftEnd = (Math.random() - 0.5) * 500 + 'px';
+
+                balloon.style.left = `${left}%`;
+                balloon.style.animationDuration = `${duration}s`;
+                balloon.style.animationDelay = `${delay}s`;
+                balloon.style.transform = `scale(${size})`;
+                balloon.style.setProperty('--b-color', color);
+                balloon.style.setProperty('--drift', drift);
+                balloon.style.setProperty('--drift-end', driftEnd);
+                scene.appendChild(balloon);
+            }
+            balloonsInitialized = true;
+        }
+        function loadAdminUsers() {
+            fetch("/api/admin/users")
+                .then(res => res.json())
+                .then(data => {
+                    adminUsers = data.map(user => ({ ...user, bookings: user.bookings || 0 }));
+                    document.getElementById('app-container').innerHTML = views.admin();
+                })
+                .catch(() => {
+                    // Use dummy data if API fails
+                    adminUsers = [...dummyUsers];
+                    document.getElementById('app-container').innerHTML = views.admin();
+                });
+        }
+
+        // --- ADMIN PANEL UI RENDERERS ---
+
+        function getAdminSidebar() {
+            return `
+            <aside class="w-full md:w-64 bg-white shadow-sidebar z-20 flex flex-col h-full fixed md:relative transition-transform duration-300 transform -translate-x-full md:translate-x-0" id="admin-sidebar">
+                <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-renova-green rounded-full flex items-center justify-center text-white font-bold text-sm">R</div>
+                        <span class="text-lg font-bold text-renova-dark tracking-tight">ADMIN</span>
+                    </div>
+                    <button onclick="toggleAdminSidebar()" class="md:hidden text-gray-400"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <nav class="flex-1 overflow-y-auto py-4">
+                    <ul class="space-y-1">
+                        <li>
+                            <button onclick="setAdminTab('dashboard')" class="sidebar-link w-full text-left px-6 py-3 flex items-center gap-3 text-gray-600 hover:text-renova-green hover:bg-renova-beige transition-colors ${state.adminTab === 'dashboard' ? 'active' : ''}">
+                                <i class="fas fa-th-large w-5"></i> Dashboard
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="setAdminTab('images')" class="sidebar-link w-full text-left px-6 py-3 flex items-center gap-3 text-gray-600 hover:text-renova-green hover:bg-renova-beige transition-colors ${state.adminTab === 'images' ? 'active' : ''}">
+                                <i class="fas fa-images w-5"></i> Manage Images
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="setAdminTab('orders')" class="sidebar-link w-full text-left px-6 py-3 flex items-center gap-3 text-gray-600 hover:text-renova-green hover:bg-renova-beige transition-colors ${state.adminTab === 'orders' ? 'active' : ''}">
+                                <i class="fas fa-clipboard-list w-5"></i> Manage Orders
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="setAdminTab('users')" class="sidebar-link w-full text-left px-6 py-3 flex items-center gap-3 text-gray-600 hover:text-renova-green hover:bg-renova-beige transition-colors ${state.adminTab === 'users' ? 'active' : ''}">
+                                <i class="fas fa-users w-5"></i> Users Data
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="p-4 border-t border-gray-100">
+                    <button onclick="router('home')" class="w-full flex items-center justify-center gap-2 text-sm font-medium text-red-500 hover:bg-red-50 p-2 rounded transition-colors">
+                        <i class="fas fa-sign-out-alt"></i> Exit Admin
+                    </button>
+                </div>
+            </aside>
+            `;
+        }
+
+        function renderAdminContent() {
+            if (state.adminTab === 'dashboard') {
+                const totalOrders = adminOrders.length || dummyOrders.length;
+                const confirmedOrders = (adminOrders.length ? adminOrders : dummyOrders).filter(o => o.order_status === 'Confirmed').length;
+                const pendingOrders = (adminOrders.length ? adminOrders : dummyOrders).filter(o => o.order_status === 'Pending').length;
+                const totalUsers = adminUsers.length || dummyUsers.length;
+                const recentActivity = (adminOrders.length ? adminOrders : dummyOrders).slice(0, 5);
+                return `
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div class="glass-panel p-5 rounded-2xl shadow-soft flex items-center gap-4">
+                            <div class="w-11 h-11 rounded-full bg-renova-green/10 flex items-center justify-center text-renova-green text-lg"><i class="fas fa-shopping-cart"></i></div>
+                            <div>
+                                <p class="text-xs text-gray-500">Total Orders</p>
+                                <h3 class="text-2xl font-bold text-renova-dark">${totalOrders}</h3>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-5 rounded-2xl shadow-soft flex items-center gap-4">
+                            <div class="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg"><i class="fas fa-check-circle"></i></div>
+                            <div>
+                                <p class="text-xs text-gray-500">Confirmed</p>
+                                <h3 class="text-2xl font-bold text-renova-dark">${confirmedOrders}</h3>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-5 rounded-2xl shadow-soft flex items-center gap-4">
+                            <div class="w-11 h-11 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 text-lg"><i class="fas fa-clock"></i></div>
+                            <div>
+                                <p class="text-xs text-gray-500">Pending</p>
+                                <h3 class="text-2xl font-bold text-renova-dark">${pendingOrders}</h3>
+                            </div>
+                        </div>
+                        <div class="glass-panel p-5 rounded-2xl shadow-soft flex items-center gap-4">
+                            <div class="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg"><i class="fas fa-users"></i></div>
+                            <div>
+                                <p class="text-xs text-gray-500">Users</p>
+                                <h3 class="text-2xl font-bold text-renova-dark">${totalUsers}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl shadow-soft">
+                        <h3 class="font-bold text-lg mb-4">Recent Orders</h3>
+                        <div class="space-y-3">
+                            ${recentActivity.map(o => `
+                            <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full ${o.order_status === 'Confirmed' ? 'bg-green-500' : o.order_status === 'Rejected' ? 'bg-red-500' : 'bg-yellow-500'}"></div>
+                                    <div>
+                                        <span class="text-sm font-medium">${o.name}</span>
+                                        <span class="text-xs text-gray-400 ml-2">— ${o.theme_name}</span>
+                                    </div>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full font-bold ${o.order_status === 'Confirmed' ? 'bg-green-100 text-green-700' : o.order_status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${o.order_status}</span>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } 
+            else if (state.adminTab === 'images') {
+                return `
+                    <div class="space-y-8">
+                        ${categories.map(cat => `
+                            <div class="glass-panel rounded-2xl shadow-soft overflow-hidden">
+                                <div class="p-4 bg-white/50 border-b border-gray-100 flex justify-between items-center">
+                                    <h3 class="font-bold text-lg text-renova-dark">${cat}</h3>
+                                    <button onclick="showAddThemeModal('${cat}')" class="text-xs bg-renova-green text-white px-3 py-1.5 rounded-full hover:bg-opacity-90"><i class="fas fa-plus mr-1"></i> Add Theme</button>
+                                </div>
+                                <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    ${themesData.filter(t => t.category === cat).map(theme => `
+                                        <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                                            <h4 class="font-semibold text-sm mb-3 truncate" title="${theme.name}">${theme.name}</h4>
+                                            <div class="grid grid-cols-3 gap-2 mb-3">
+                                                ${theme.variations[0].gallery.slice(0, 3).map((img, imgIdx) => `
+                                                    <div class="relative group aspect-square rounded-lg overflow-hidden">
+                                                        <img src="${img}" class="w-full h-full object-cover" loading="lazy">
+                                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <button onclick="showToast('Image removed!','success')" class="text-white hover:text-red-400 text-xs"><i class="fas fa-trash"></i></button>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <button onclick="showEditThemeModal('${theme.name}')" class="text-xs text-renova-green font-medium hover:underline"><i class="fas fa-edit mr-1"></i>Edit</button>
+                                                <button onclick="showToast('Image added!','success')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"><i class="fas fa-plus mr-1"></i>Add Image</button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            else if (state.adminTab === 'orders') {
+                const orders = adminOrders.length ? adminOrders : dummyOrders;
+                return `
+                    <div class="glass-panel rounded-2xl shadow-soft overflow-hidden">
+                        <div class="p-4 bg-white/50 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-bold text-lg text-renova-dark">All Orders <span class="text-sm font-normal text-gray-400">(${orders.length})</span></h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-xs text-gray-500 uppercase border-b border-gray-100 bg-gray-50/50">
+                                        <th class="p-4 font-semibold">Order ID</th>
+                                        <th class="p-4 font-semibold">Customer</th>
+                                        <th class="p-4 font-semibold">Theme</th>
+                                        <th class="p-4 font-semibold">Date</th>
+                                        <th class="p-4 font-semibold">Status</th>
+                                        <th class="p-4 font-semibold">Payment</th>
+                                        <th class="p-4 font-semibold text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm divide-y divide-gray-50">
+                                    ${orders.map(order => `
+                                        <tr class="hover:bg-white/40 transition-colors">
+                                            <td class="p-4 font-medium text-renova-dark">#${order.id}</td>
+                                            <td class="p-4">
+                                                <div class="font-medium">${order.name}</div>
+                                                <div class="text-xs text-gray-400">${order.phone || ''}</div>
+                                            </td>
+                                            <td class="p-4 text-gray-600 max-w-[150px]"><span class="truncate block">${order.theme_name}</span></td>
+                                            <td class="p-4 text-gray-600">${new Date(order.event_date).toLocaleDateString('en-IN')}</td>
+                                            <td class="p-4">
+                                                <span class="px-2 py-1 rounded-full text-xs font-bold 
+                                                    ${order.order_status === 'Confirmed' ? 'bg-green-100 text-green-700' : 
+                                                      order.order_status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 
+                                                      'bg-red-100 text-red-700'}">
+                                                    ${order.order_status}
+                                                </span>
+                                            </td>
+                                            <td class="p-4">
+                                                <span class="${order.payment_status === 'Paid' ? 'text-green-600 font-medium' : 'text-orange-500'}">
+                                                    ${order.payment_status}
+                                                </span>
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                ${order.order_status === 'Pending' ? `
+                                                <div class="flex items-center justify-end gap-2">
+                                                    <button onclick="updateBooking(${order.id}, 'accept')" 
+                                                        class="w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all flex items-center justify-center" title="Accept">
+                                                        <i class="fas fa-check text-xs"></i>
+                                                    </button>
+                                                    <button onclick="updateBooking(${order.id}, 'reject')" 
+                                                        class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center" title="Reject">
+                                                        <i class="fas fa-times text-xs"></i>
+                                                    </button>
+                                                </div>
+                                                ` : `<span class="text-xs text-gray-400">Done</span>`}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            else if (state.adminTab === 'users') {
+                const users = adminUsers.length ? adminUsers : dummyUsers;
+                return `
+                    <div class="glass-panel rounded-2xl shadow-soft overflow-hidden">
+                        <div class="p-4 bg-white/50 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-bold text-lg text-renova-dark">Registered Users <span class="text-sm font-normal text-gray-400">(${users.length})</span></h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-xs text-gray-500 uppercase border-b border-gray-100 bg-gray-50/50">
+                                        <th class="p-4 font-semibold">User</th>
+                                        <th class="p-4 font-semibold">Email</th>
+                                        <th class="p-4 font-semibold">Phone</th>
+                                        <th class="p-4 font-semibold text-center">Bookings</th>
+                                        <th class="p-4 font-semibold text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm divide-y divide-gray-50">
+                                    ${users.map(user => `
+                                        <tr class="hover:bg-white/40 transition-colors">
+                                            <td class="p-4 font-medium text-renova-dark">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-full bg-renova-green text-white flex items-center justify-center font-bold text-xs">${user.name.charAt(0)}</div>
+                                                    ${user.name}
+                                                </div>
+                                            </td>
+                                            <td class="p-4 text-gray-600">${user.email}</td>
+                                            <td class="p-4 text-gray-600">${user.phone}</td>
+                                            <td class="p-4 text-center">
+                                                <span class="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">${user.bookings}</span>
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                <button onclick="viewUserHistory('${user.email}')" class="text-renova-green hover:underline text-xs font-medium">View History</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            return '';
+        }
+function updateBooking(id, action) {
+  fetch(`/api/admin/update-booking/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: action })
+  })
+  .then(res => res.json())
+  .then(data => {
+    showToast(data.message || "Booking updated!", "success");
+    // Update local data too
+    const order = adminOrders.find(o => o.id === id);
+    if (order) {
+        order.order_status = action === 'accept' ? 'Confirmed' : 'Rejected';
+        order.payment_status = action === 'accept' ? 'Paid' : 'Pending';
+    }
+    document.getElementById('app-container').innerHTML = views.admin();
+  })
+  .catch(() => {
+    // Update local dummy data directly if API unavailable
+    const order = adminOrders.find(o => o.id === id);
+    if (order) {
+        order.order_status = action === 'accept' ? 'Confirmed' : 'Rejected';
+        order.payment_status = action === 'accept' ? 'Paid' : 'Pending';
+        showToast("Booking updated successfully!", "success");
+    }
+    document.getElementById('app-container').innerHTML = views.admin();
+  });
+}
+        // --- VIEWS ---
+        const views = {
+            home: () => `
+                <section class="relative min-h-[92vh] flex items-center overflow-hidden">
+                    <div class="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center py-12">
+
+                        <!-- LEFT TEXT -->
+                        <div class="fade-in z-10">
+                            <span class="inline-block py-1 px-3 rounded-full bg-renova-lightGreen/30 text-renova-green text-xs font-bold mb-4 tracking-wider uppercase">🌿 Decoration as a Service</span>
+                            <h1 class="text-5xl md:text-6xl font-bold text-renova-dark leading-tight mb-6">
+                                Celebrate <span class="text-renova-green">Responsibly.</span><br>
+                                Rent, Reuse, Renew.
+                            </h1>
+                            <p class="text-gray-600 text-lg mb-8 leading-relaxed max-w-lg">
+                                Stop the waste. Choose beautiful, reusable decorations for your special moments. Affordable, eco-friendly, and hassle-free.
+                            </p>
+                            <div class="flex flex-wrap gap-4 mb-10">
+                                <button onclick="router('categories')" class="bg-renova-green text-white px-8 py-3 rounded-full font-medium hover:bg-opacity-90 transition-all shadow-lg transform hover:-translate-y-1">
+                                    Explore Themes
+                                </button>
+                                <button onclick="router('sustainability')" class="border-2 border-renova-green text-renova-green px-8 py-3 rounded-full font-medium hover:bg-renova-green hover:text-white transition-all">
+                                    Our Eco Impact
+                                </button>
+                            </div>
+                            <!-- Stats row -->
+                            <div class="flex gap-8">
+                                <div><p class="text-2xl font-bold text-renova-green">500+</p><p class="text-xs text-gray-500">Events Done</p></div>
+                                <div class="border-l border-gray-200 pl-8"><p class="text-2xl font-bold text-renova-green">98%</p><p class="text-xs text-gray-500">Reuse Rate</p></div>
+                                <div class="border-l border-gray-200 pl-8"><p class="text-2xl font-bold text-renova-green">0 🗑️</p><p class="text-xs text-gray-500">Landfill Waste</p></div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT 3D DECORATION SCENE -->
+                        <div class="relative z-10 fade-in hidden md:flex items-center justify-center" style="animation-delay:0.2s; height:520px;">
+
+                            <!-- Glowing background blobs -->
+                            <div class="absolute w-72 h-72 bg-renova-lightGreen/30 rounded-full blur-3xl top-10 left-10"></div>
+                            <div class="absolute w-48 h-48 bg-renova-accent/20 rounded-full blur-2xl bottom-10 right-10"></div>
+
+                            <!-- Main 3D card — backdrop stage -->
+                            <div class="relative w-[340px] h-[420px]" style="perspective:1000px;">
+                                <div class="w-full h-full rounded-3xl shadow-2xl overflow-hidden border-4 border-white/60"
+                                     style="transform: rotateY(-8deg) rotateX(4deg); transform-style:preserve-3d; transition: transform 0.6s ease;"
+                                     onmousemove="this.style.transform='rotateY('+(-(event.offsetX-170)/20)+'deg) rotateX('+(event.offsetY-210)/20+'deg)'"
+                                     onmouseleave="this.style.transform='rotateY(-8deg) rotateX(4deg)'">
+                                    <img src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=700&h=900&fit=crop"
+                                         alt="Eco Party Decoration" class="w-full h-full object-cover">
+                                    <!-- overlay gradient -->
+                                    <div class="absolute inset-0 bg-gradient-to-t from-renova-dark/60 via-transparent to-transparent"></div>
+                                    <div class="absolute bottom-5 left-5 right-5">
+                                        <p class="text-white font-bold text-lg">Premium Eco Decor</p>
+                                        <p class="text-white/70 text-xs">Reusable · Sustainable · Beautiful</p>
+                                    </div>
+                                </div>
+
+                                <!-- Floating badge 1 — top right -->
+                                <div class="absolute -top-4 -right-6 bg-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-2 animate-bounce" style="animation-duration:3s;">
+                                    <div class="w-9 h-9 bg-renova-green rounded-full flex items-center justify-center text-white text-sm"><i class="fas fa-leaf"></i></div>
+                                    <div><p class="text-xs font-bold text-renova-dark">100% Eco</p><p class="text-xs text-gray-400">Zero Waste</p></div>
+                                </div>
+
+                                <!-- Floating badge 2 — bottom left -->
+                                <div class="absolute -bottom-4 -left-6 bg-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-2" style="animation: floatBadge 4s ease-in-out infinite;">
+                                    <div class="w-9 h-9 bg-renova-accent rounded-full flex items-center justify-center text-white text-sm"><i class="fas fa-recycle"></i></div>
+                                    <div><p class="text-xs font-bold text-renova-dark">Reuse Cycle</p><p class="text-xs text-gray-400">Every Decor Item</p></div>
+                                </div>
+
+                                <!-- Floating mini card — left middle -->
+                                <div class="absolute top-1/2 -left-16 -translate-y-1/2 bg-white rounded-xl shadow-lg p-3 w-14 flex flex-col items-center gap-1" style="animation: floatBadge 5s ease-in-out infinite 1s;">
+                                    <span class="text-2xl">🎈</span>
+                                    <p class="text-xs text-gray-500 text-center leading-tight">Bio Balloons</p>
+                                </div>
+
+                                <!-- Floating mini card — right middle -->
+                                <div class="absolute top-1/3 -right-14 bg-white rounded-xl shadow-lg p-3 w-14 flex flex-col items-center gap-1" style="animation: floatBadge 4.5s ease-in-out infinite 0.5s;">
+                                    <span class="text-2xl">🌸</span>
+                                    <p class="text-xs text-gray-500 text-center leading-tight">Fresh Flowers</p>
+                                </div>
+
+                                <!-- Floating mini card — top left -->
+                                <div class="absolute -top-8 left-8 bg-white rounded-xl shadow-lg p-3 w-14 flex flex-col items-center gap-1" style="animation: floatBadge 3.5s ease-in-out infinite 0.8s;">
+                                    <span class="text-2xl">✨</span>
+                                    <p class="text-xs text-gray-500 text-center leading-tight">LED Lights</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <style>
+                @keyframes floatBadge {
+                    0%,100% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                }
+                </style>
+            `,
+
+            categories: () => `
+                <section class="py-12 container mx-auto px-4 fade-in">
+                    <h2 class="text-3xl font-bold text-center mb-10">Find the Perfect Vibe</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        ${categories.map(cat => `
+                            <div onclick="filterThemes('${cat}')" class="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-card hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                                <div class="h-40 overflow-hidden">
+                                    <img src="${categoryImages[cat] || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop'}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="${cat}">
+                                </div>
+                                <div class="p-4 text-center">
+                                    <h3 class="font-semibold text-lg group-hover:text-renova-green transition-colors">${cat}</h3>
+                                    <button class="text-sm text-gray-500 mt-1 border border-gray-200 px-3 py-1 rounded-full group-hover:bg-renova-green group-hover:text-white group-hover:border-renova-green transition-all">✨ Explore Beautiful Setups😍</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+            `,
+
+            themes: (filter = 'All') => `
+                <section class="py-8 container mx-auto px-4 fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                        <h2 class="text-3xl font-bold">
+                            ${filter === 'All' ? 'All Themes' : filter + ' Themes'} 
+                            <span class="text-lg font-normal text-gray-500 ml-2">(${filter === 'All' ? themesData.length : themesData.filter(t => t.category === filter).length})</span>
+                        </h2>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="renderThemesPage('All')" class="px-4 py-2 rounded-full text-sm font-medium transition-colors ${filter === 'All' ? 'bg-renova-green text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}">All</button>
+                            ${categories.map(cat => `
+                                <button onclick="renderThemesPage('${cat}')" class="px-4 py-2 rounded-full text-sm font-medium transition-colors ${filter === cat ? 'bg-renova-green text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}">${cat}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Parent Themes List -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                        ${themesData.filter(t => filter === 'All' || t.category === filter).map(theme => `
+                            <div class="bg-white rounded-lg shadow-card hover:shadow-lg transition-all duration-300 border border-gray-100 flex flex-col h-full group">
+                                <div class="relative h-48 overflow-hidden rounded-t-lg">
+                                    <img src="${theme.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="${theme.name}" loading="lazy">
+                                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                                        <span class="text-white text-xs font-bold"><i class="fas fa-layer-group mr-1"></i>🌿 Eco-Friendly Setup</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 flex flex-col flex-grow">
+                                    <h3 class="font-bold text-gray-800 mb-1 line-clamp-2 text-sm leading-tight h-10">${theme.name}</h3>
+                                    <p class="text-xs text-gray-500 mb-4">${theme.category}</p>
+                                    <div class="mt-auto pt-3 border-t border-gray-100">
+                                        <button onclick="selectParentTheme(${theme.id})" class="w-full bg-renova-lightGreen text-renova-green hover:bg-renova-green hover:text-white text-xs font-semibold px-3 py-2 rounded transition-colors">
+                                            Explore Themes..
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+            `,
+
+            // --- NEW VIEW: SUB-THEME SELECTION ---
+            subThemes: () => {
+                const parent = state.selectedParent;
+                if(!parent) return router('themes');
+
+                return `
+                <section class="py-8 container mx-auto px-4 fade-in">
+                    <button onclick="router('themes')" class="mb-6 text-gray-500 hover:text-renova-green flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back to Themes</button>
+                    
+                    <div class="mb-8">
+                        <span class="text-sm text-renova-green font-bold uppercase tracking-wide">${parent.category}</span>
+                        <h2 class="text-3xl md:text-4xl font-bold text-renova-dark mt-2">${parent.name}</h2>
+                        <p class="text-gray-500 mt-2">Select a specific variation from ${parent.variations.length} available options.</p>
+                    </div>
+
+                    <!-- Grid of 8-10 Sub-Themes -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        ${parent.variations.map(sub => `
+                            <div class="bg-white rounded-lg shadow-card hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full group cursor-pointer" onclick="selectSubTheme(${sub.id})">
+                                <div class="relative h-48 overflow-hidden rounded-t-lg">
+                                    <img src="${sub.image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="${sub.name}" loading="lazy">
+                                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                                </div>
+                                <div class="p-4 flex flex-col flex-grow">
+                                    <h3 class="font-bold text-gray-800 mb-2 line-clamp-1 text-sm">${sub.name}</h3>
+                                    <div class="mt-auto flex items-center justify-between">
+                                        <span class="text-lg font-bold text-renova-green">₹${sub.price}</span>
+                                        <span class="text-xs text-gray-500">/day</span>
+                                    </div>
+                                    <button class="mt-3 w-full bg-renova-dark text-white py-2 rounded text-xs font-bold hover:bg-black transition-colors">
+                                        Select This
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+                `;
+            },
+
+            themeDetails: () => {
+                const theme = state.currentTheme;
+                if(!theme) return router('themes');
+                
+                return `
+                <section class="py-8 container mx-auto px-4 fade-in">
+                    <button onclick="router('subThemes')" class="mb-6 text-gray-500 hover:text-renova-green flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back to Variations</button>
+                    
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div class="space-y-4">
+                            <img src="${theme.image}" class="w-full rounded-2xl shadow-lg aspect-video object-cover" alt="Main Setup">
+                            <div class="grid grid-cols-3 gap-2">
+                                ${theme.gallery.slice(1).map(img => `
+                                    <img src="${img}" class="rounded-lg object-cover w-full h-24 hover:opacity-80 transition cursor-pointer" alt="Detail Shot">
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="bg-renova-lightGreen/20 text-renova-green px-3 py-1 rounded-full text-xs font-bold uppercase">${theme.category}</span>
+                                ${theme.eco ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><i class="fas fa-leaf"></i> Eco-Friendly</span>' : ''}
+                            </div>
+                            
+                            <h1 class="text-3xl md:text-4xl font-bold mb-4">${theme.name}</h1>
+                            
+                            <div class="flex items-center gap-4 mb-6">
+                                <span class="text-3xl font-bold text-renova-dark">₹${theme.price}</span>
+                                <span class="text-gray-500">+ ₹500 Setup</span>
+                            </div>
+                            
+                            <div class="bg-renova-cream p-6 rounded-xl mb-6">
+                                <h3 class="font-semibold mb-3">What's Included</h3>
+                                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                                    ${theme.items.map(item => `<li class="flex items-center gap-2"><i class="fas fa-check-circle text-renova-green"></i> ${item}</li>`).join('')}
+                                </ul>
+                            </div>
+
+                            <button onclick="router('booking')" class="w-full bg-renova-green text-white py-4 rounded-xl font-bold text-lg hover:bg-opacity-90 shadow-lg transition-transform transform active:scale-95">
+                                Proceed to Book
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                `;
+            },
+
+            booking: () => `
+                <section class="py-12 container mx-auto px-4 fade-in">
+                    <h2 class="text-2xl font-bold mb-8 text-center">Complete Your Booking</h2>
+                    <div class="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+                        <div class="md:col-span-2 space-y-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-semibold mb-4 border-b pb-2">1. Personal Details</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="col-span-2">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Full Name</label>
+                                        <input id="custName" type="text" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-renova-lightGreen outline-none">
+                                    </div>
+                                    <div class="col-span-2">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Phone Number</label>
+<input id="custPhone" type="tel" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-renova-lightGreen outline-none">                                    </div>
+                                    <div class="col-span-2">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Event Address</label>
+<textarea id="custAddress" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-renova-lightGreen outline-none h-24"></textarea>                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-semibold mb-4 border-b pb-2">2. Event Details</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Event Date</label>
+<input id="eventDate" type="date" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none">                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Time Slot</label>
+<select id="timeSlot" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none">                                            <option>Morning</option>
+                                            <option>Evening</option>
+                                            <option>Full Day</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-1">
+                            <div class="bg-white p-6 rounded-xl shadow-soft border border-gray-100 sticky top-24">
+                                <h3 class="font-bold mb-4">Booking Summary</h3>
+                                ${state.currentTheme ? `
+                                    <div class="flex gap-3 mb-4">
+                                        <img src="${state.currentTheme.image}" class="w-16 h-16 rounded object-cover">
+                                        <div>
+                                            <p class="text-sm font-semibold line-clamp-2">${state.currentTheme.name}</p>
+                                            <p class="text-xs text-gray-500">${state.currentTheme.category}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 text-sm border-t pt-4 mb-6">
+                                        <div class="flex justify-between"><span>Rental</span> <span>₹${state.currentTheme.price}</span></div>
+                                        <div class="flex justify-between"><span>Setup</span> <span>₹500</span></div>
+                                        <div class="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total</span> <span>₹${state.currentTheme.price + 500}</span></div>
+                                    </div>
+                                ` : '<p class="text-red-500 text-sm">Please select a theme first.</p>'}
+                                <button onclick="confirmBooking()" ${!state.currentTheme ? 'disabled' : ''} class="w-full bg-renova-dark text-white py-3 rounded-lg font-bold hover:bg-black transition-colors disabled:opacity-50">Proceed to Pay</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `,
+
+            payment: () => `
+                <section class="py-12 container mx-auto px-4 max-w-lg fade-in">
+                    <button onclick="router('booking')" class="mb-6 text-gray-500 hover:text-renova-green"><i class="fas fa-arrow-left"></i> Back</button>
+                    <h2 class="text-2xl font-bold mb-6">Select Payment Method</h2>
+                    <div class="bg-white rounded-xl shadow-soft overflow-hidden">
+                        <label class="flex items-center p-4 border-b cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment" checked class="text-renova-green focus:ring-renova-green h-5 w-5">
+                            <div class="ml-4"><span class="font-semibold">UPI</span></div>
+                        </label>
+                        <label class="flex items-center p-4 cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment" class="text-renova-green focus:ring-renova-green h-5 w-5">
+                            <div class="ml-4"><span class="font-semibold">Card</span></div>
+                        </label>
+                    </div>
+                    <div class="text-center mt-6">
+    <h3 class="font-semibold text-lg mb-4">Scan & Pay</h3>
+
+    <img 
+        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=shraddha@upi&pn=RENOVA&am=${state.currentTheme.price + 500}"
+        class="mx-auto rounded-lg shadow-lg mb-4"
+    />
+
+    <p class="text-gray-600 mb-4">
+        Amount to Pay: 
+        <span class="font-bold text-renova-green text-lg">
+            ₹${state.currentTheme.price + 500}
+        </span>
+    </p>
+
+    <button onclick="confirmPayment()" 
+        class="w-full bg-renova-green text-white py-4 rounded-xl font-bold text-lg hover:bg-opacity-90 shadow-lg">
+        I Have Paid
+    </button>
+</div>
+                </section>
+            `,
+
+            tracking: () => `
+                <section class="py-12 container mx-auto px-4 max-w-2xl fade-in text-center">
+                    <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4"><i class="fas fa-check"></i></div>
+                    <h2 class="text-2xl font-bold">Booking Confirmed!</h2>
+                    <div class="bg-white p-6 rounded-xl shadow-soft mt-8 text-left">
+                        <h3 class="font-bold mb-6">Order Status</h3>
+                        <div class="relative pl-8 border-l-2 border-gray-200 space-y-8">
+                            <div class="relative"><div class="absolute -left-[39px] bg-renova-green w-6 h-6 rounded-full border-4 border-white"></div><h4 class="font-semibold text-renova-green">Confirmed</h4></div>
+                            <div class="relative"><div class="absolute -left-[39px] bg-blue-500 w-6 h-6 rounded-full border-4 border-white"></div><h4 class="font-semibold text-blue-500">Out for Delivery</h4></div>
+                        </div>
+                    </div>
+                    <button onclick="router('dashboard')" class="mt-8 bg-renova-cream text-renova-dark py-3 rounded-xl font-semibold">Dashboard</button>
+                </section>
+            `,
+
+                        sustainability: () => `
+                <style>
+                    .eco-step { transition: all 0.3s ease; }
+                    .eco-step:hover { transform: translateY(-4px); }
+                    .cycle-arrow { animation: pulseArrow 2s ease-in-out infinite; }
+                    @keyframes pulseArrow { 0%,100%{opacity:0.4;transform:scale(1);} 50%{opacity:1;transform:scale(1.2);} }
+                    .counter { animation: countUp 2s ease-out forwards; }
+                    .progress-bar { transition: width 1.5s ease-in-out; }
+                </style>
+                <section class="fade-in bg-renova-beige min-h-screen">
+
+                    <!-- HERO BANNER -->
+                    <div class="relative bg-renova-green overflow-hidden py-16 px-4">
+                        <div class="absolute inset-0 opacity-10">
+                            <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                            <div class="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
+                        </div>
+                        <div class="container mx-auto text-center relative z-10">
+                            <span class="inline-block bg-white/20 text-white text-xs font-bold px-4 py-1 rounded-full mb-4 tracking-widest uppercase">Our Commitment</span>
+                            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">Eco Impact 🌍</h1>
+                            <p class="text-renova-lightGreen text-lg max-w-2xl mx-auto">Every decoration we rent saves the planet. Here's exactly how RENOVA's Reuse → Recycle → Renew cycle works.</p>
+                            <!-- Live counters -->
+                            <div class="grid grid-cols-3 gap-6 max-w-lg mx-auto mt-10">
+                                <div class="bg-white/10 rounded-2xl p-4">
+                                    <p class="text-3xl font-bold text-white">2.4T</p>
+                                    <p class="text-renova-lightGreen text-xs mt-1">Waste Prevented (kg)</p>
+                                </div>
+                                <div class="bg-white/10 rounded-2xl p-4">
+                                    <p class="text-3xl font-bold text-white">500+</p>
+                                    <p class="text-renova-lightGreen text-xs mt-1">Events Completed</p>
+                                </div>
+                                <div class="bg-white/10 rounded-2xl p-4">
+                                    <p class="text-3xl font-bold text-white">98%</p>
+                                    <p class="text-renova-lightGreen text-xs mt-1">Reuse Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="container mx-auto px-4 py-14">
+
+                        <!-- THE 3-PILLAR CYCLE -->
+                        <div class="text-center mb-12">
+                            <h2 class="text-3xl font-bold text-renova-dark">The R³ Cycle</h2>
+                            <p class="text-gray-500 mt-2">How every decoration lives forever</p>
+                        </div>
+
+                        <!-- CYCLE VISUAL -->
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-16">
+
+                            <!-- REUSE -->
+                            <div class="eco-step bg-white rounded-3xl shadow-lg p-8 flex-1 max-w-xs text-center border-t-4 border-renova-green">
+                                <div class="w-16 h-16 bg-renova-green rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-lg">
+                                    <i class="fas fa-redo"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-renova-green mb-2">REUSE</h3>
+                                <p class="text-gray-500 text-sm mb-4">Every item is collected, cleaned and deployed again — up to 50+ times.</p>
+                                <div class="space-y-2 text-left text-sm">
+                                    <div class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><i class="fas fa-truck text-renova-green w-4"></i><span>Post-event collection within 24hrs</span></div>
+                                    <div class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><i class="fas fa-soap text-renova-green w-4"></i><span>Deep clean & sanitize</span></div>
+                                    <div class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><i class="fas fa-tools text-renova-green w-4"></i><span>Repair & refurbish</span></div>
+                                    <div class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><i class="fas fa-warehouse text-renova-green w-4"></i><span>Inventory & re-deploy</span></div>
+                                </div>
+                                <div class="mt-4 bg-renova-green/10 rounded-xl p-3">
+                                    <p class="text-renova-green font-bold text-lg">50x</p>
+                                    <p class="text-xs text-gray-500">avg reuse per item</p>
+                                </div>
+                            </div>
+
+                            <!-- ARROW -->
+                            <div class="cycle-arrow text-renova-green text-3xl hidden md:block">→</div>
+                            <div class="cycle-arrow text-renova-green text-3xl md:hidden">↓</div>
+
+                            <!-- RECYCLE -->
+                            <div class="eco-step bg-white rounded-3xl shadow-lg p-8 flex-1 max-w-xs text-center border-t-4 border-blue-500">
+                                <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-lg">
+                                    <i class="fas fa-recycle"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-blue-500 mb-2">RECYCLE</h3>
+                                <p class="text-gray-500 text-sm mb-4">Items beyond repair are broken down and sent to certified recycling partners.</p>
+                                <div class="space-y-2 text-left text-sm">
+                                    <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2"><i class="fas fa-search text-blue-500 w-4"></i><span>Quality inspection & sorting</span></div>
+                                    <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2"><i class="fas fa-cut text-blue-500 w-4"></i><span>Material separation (fabric, metal, plastic)</span></div>
+                                    <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2"><i class="fas fa-industry text-blue-500 w-4"></i><span>Sent to certified recyclers</span></div>
+                                    <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2"><i class="fas fa-certificate text-blue-500 w-4"></i><span>Zero landfill guarantee</span></div>
+                                </div>
+                                <div class="mt-4 bg-blue-50 rounded-xl p-3">
+                                    <p class="text-blue-500 font-bold text-lg">100%</p>
+                                    <p class="text-xs text-gray-500">diverted from landfill</p>
+                                </div>
+                            </div>
+
+                            <!-- ARROW -->
+                            <div class="cycle-arrow text-renova-green text-3xl hidden md:block">→</div>
+                            <div class="cycle-arrow text-renova-green text-3xl md:hidden">↓</div>
+
+                            <!-- RENEW -->
+                            <div class="eco-step bg-white rounded-3xl shadow-lg p-8 flex-1 max-w-xs text-center border-t-4 border-renova-accent">
+                                <div class="w-16 h-16 bg-renova-accent rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4 shadow-lg">
+                                    <i class="fas fa-seedling"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-renova-accent mb-2">RENEW</h3>
+                                <p class="text-gray-500 text-sm mb-4">Recycled materials become new decorations. The cycle never ends.</p>
+                                <div class="space-y-2 text-left text-sm">
+                                    <div class="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2"><i class="fas fa-leaf text-renova-accent w-4"></i><span>Source eco-raw materials</span></div>
+                                    <div class="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2"><i class="fas fa-paint-brush text-renova-accent w-4"></i><span>Craft new decor pieces</span></div>
+                                    <div class="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2"><i class="fas fa-star text-renova-accent w-4"></i><span>Add to inventory as new</span></div>
+                                    <div class="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2"><i class="fas fa-infinity text-renova-accent w-4"></i><span>Cycle restarts</span></div>
+                                </div>
+                                <div class="mt-4 bg-orange-50 rounded-xl p-3">
+                                    <p class="text-renova-accent font-bold text-lg">∞</p>
+                                    <p class="text-xs text-gray-500">infinite lifecycle</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MATERIAL BREAKDOWN -->
+                        <div class="bg-white rounded-3xl shadow-lg p-8 mb-12">
+                            <h3 class="text-2xl font-bold text-renova-dark mb-2">Material Lifecycle Tracker</h3>
+                            <p class="text-gray-500 text-sm mb-8">How each material type is handled in our system</p>
+                            <div class="space-y-5">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold">🪢 Fabric & Drapes</span><span class="text-renova-green font-bold">Reused 95%</span></div>
+                                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-renova-green rounded-full" style="width:95%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold">💡 LED Lights & Strings</span><span class="text-renova-green font-bold">Reused 90%</span></div>
+                                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-renova-green rounded-full" style="width:90%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold">🎈 Foil Balloons</span><span class="text-blue-500 font-bold">Recycled 85%</span></div>
+                                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-blue-400 rounded-full" style="width:85%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold">🌸 Fresh Flowers</span><span class="text-renova-accent font-bold">Composted 100%</span></div>
+                                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-renova-accent rounded-full" style="width:100%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold">🪵 Wooden & Bamboo Props</span><span class="text-renova-green font-bold">Reused 98%</span></div>
+                                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-renova-green rounded-full" style="width:98%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- IMPACT CARDS -->
+                        <div class="grid md:grid-cols-3 gap-6 mb-12">
+                            <div class="eco-step bg-gradient-to-br from-renova-green to-green-700 rounded-3xl p-6 text-white text-center shadow-lg">
+                                <i class="fas fa-tree text-4xl mb-3 opacity-80"></i>
+                                <h4 class="text-2xl font-bold">120 Trees</h4>
+                                <p class="text-green-200 text-sm mt-1">Equivalent saved from paper waste this year</p>
+                            </div>
+                            <div class="eco-step bg-gradient-to-br from-blue-500 to-blue-700 rounded-3xl p-6 text-white text-center shadow-lg">
+                                <i class="fas fa-tint text-4xl mb-3 opacity-80"></i>
+                                <h4 class="text-2xl font-bold">50,000 L</h4>
+                                <p class="text-blue-200 text-sm mt-1">Water saved vs single-use decoration production</p>
+                            </div>
+                            <div class="eco-step bg-gradient-to-br from-renova-accent to-orange-600 rounded-3xl p-6 text-white text-center shadow-lg">
+                                <i class="fas fa-smog text-4xl mb-3 opacity-80"></i>
+                                <h4 class="text-2xl font-bold">3.2T CO₂</h4>
+                                <p class="text-orange-200 text-sm mt-1">Carbon emissions avoided through reuse</p>
+                            </div>
+                        </div>
+
+                        <!-- PLEDGE BANNER -->
+                        <div class="bg-renova-dark rounded-3xl p-8 text-center text-white">
+                            <i class="fas fa-hand-holding-heart text-renova-lightGreen text-4xl mb-4"></i>
+                            <h3 class="text-2xl font-bold mb-2">Every Booking = One Less Waste</h3>
+                            <p class="text-gray-400 mb-6 max-w-xl mx-auto">When you book with RENOVA, you're not just getting beautiful decor — you're actively preventing waste and supporting a circular economy.</p>
+                            <button onclick="router('categories')" class="bg-renova-green text-white px-8 py-3 rounded-full font-bold hover:bg-opacity-90 transition-all shadow-lg">
+                                Book Eco Decor Now 🌿
+                            </button>
+                        </div>
+
+                    </div>
+                </section>
+            `,
+
+           dashboard: () => `
+<section class="py-8 container mx-auto px-4 fade-in">
+  <h1 class="text-2xl font-bold mb-8">My Bookings</h1>
+
+  <div id="user-bookings-container" class="space-y-4"></div>
+</section>
+`,
+
+            feedback: () => `<section class="py-12 container mx-auto px-4 fade-in text-center"><h2 class="text-2xl font-bold">Feedback</h2><p>Thank you for your review!</p><button onclick="router('dashboard')" class="mt-4 bg-renova-green text-white px-6 py-2 rounded-full">Back</button></section>`,
+            contact: () => `<section class="py-12 container mx-auto px-4 fade-in text-center"><h2 class="text-2xl font-bold">Contact Us</h2><p>hello@renova.com</p></section>`,
+
+            // --- NEW ADMIN PANEL VIEW ---
+            admin: () => {
+                return `
+                <div class="flex h-screen bg-gray-50 overflow-hidden">
+                    <!-- Mobile Sidebar Toggle -->
+                    <button onclick="toggleAdminSidebar()" class="md:hidden fixed bottom-4 right-4 z-50 w-12 h-12 bg-renova-green text-white rounded-full shadow-lg flex items-center justify-center">
+                        <i class="fas fa-bars"></i>
+                    </button>
+
+                    <!-- Sidebar -->
+                    ${getAdminSidebar()}
+
+                    <!-- Content Area -->
+                    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                        <!-- Mobile Header -->
+                        <div class="md:hidden flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-renova-dark uppercase tracking-wider">RENOVA ADMIN</h2>
+                        </div>
+
+                        <!-- Dynamic Content -->
+                        <div class="fade-in">
+                            ${renderAdminContent()}
+                        </div>
+                    </main>
+                </div>
+                `;
+            }
+        };
+
+        // --- NAVIGATION LOGIC ---
+
+        // 1. Clicking a Theme (Parent) -> Go to Sub-Theme Selection
+        function selectParentTheme(id) {
+            const parent = themesData.find(t => t.id === id);
+            if (parent) {
+                state.selectedParent = parent;
+                router('subThemes');
+            }
+        }
+
+        // 2. Clicking a Sub-Theme -> Go to Details
+        function selectSubTheme(id) {
+            // We need to find the sub-theme inside the selected parent's variations
+            const parent = state.selectedParent;
+            const subTheme = parent.variations.find(t => t.id === id);
+            
+            if (subTheme) {
+                state.currentTheme = subTheme;
+                router('themeDetails');
+            }
+        }
+
+        // 3. Admin Tab Switcher
+        function setAdminTab(tab) {
+            state.adminTab = tab;
+            if (tab === 'users') {
+                loadAdminUsers();
+            } else if (tab === 'orders') {
+                loadAdminData();
+            } else {
+                document.getElementById('app-container').innerHTML = views.admin();
+            }
+        }
+
+        function viewUserHistory(email) {
+            const userOrders = (adminOrders.length ? adminOrders : dummyOrders).filter(o => o.email === email);
+            const user = (adminUsers.length ? adminUsers : dummyUsers).find(u => u.email === email);
+            if (!user) return;
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">${user.name}'s Bookings</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                    </div>
+                    ${userOrders.length === 0 ? '<p class="text-gray-500 text-sm">No bookings found.</p>' : `
+                    <div class="space-y-3 max-h-80 overflow-y-auto">
+                        ${userOrders.map(o => `
+                        <div class="p-3 bg-gray-50 rounded-lg text-sm">
+                            <div class="font-medium">${o.theme_name}</div>
+                            <div class="text-gray-500 text-xs mt-1">${new Date(o.event_date).toLocaleDateString('en-IN')} · ${o.time_slot}</div>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-bold mt-1 inline-block ${o.order_status === 'Confirmed' ? 'bg-green-100 text-green-700' : o.order_status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${o.order_status}</span>
+                        </div>
+                        `).join('')}
+                    </div>`}
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 4. Toggle Admin Sidebar on Mobile
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            if(sidebar) {
+                sidebar.classList.toggle('-translate-x-full');
+            }
+        }
+
+        function router(viewName, param = null) {
+            const container = document.getElementById('app-container');
+            const bgContainer = document.getElementById('balloon-bg');
+            const body = document.body;
+
+            window.scrollTo(0, 0);
+            
+            // Handle Balloon Background visibility
+            if (viewName === 'home') {
+                bgContainer.classList.add('active');
+                initBalloons();
+            } else {
+                bgContainer.classList.remove('active');
+            }
+
+        if (viewName === 'admin') {
+    body.classList.add('admin-mode');
+    loadAdminData();
+     } else {
+    body.classList.remove('admin-mode');
+     }
+
+     if (views[viewName]) {
+    container.innerHTML = views[viewName](param);
+if (viewName === "dashboard") {
+  setTimeout(loadUserBookings, 100);
+}
+  }
+    }
+        function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
+        function filterThemes(cat) { router('themes', cat); }
+        function renderThemesPage(filter) { router('themes', filter); }
+  let bookingDraft = {};
+
+function confirmBooking() {
+
+  const name = document.getElementById("custName").value.trim();
+  const phone = document.getElementById("custPhone").value.trim();
+  const address = document.getElementById("custAddress").value.trim();
+  const eventDate = document.getElementById("eventDate").value;
+  const timeSlot = document.getElementById("timeSlot").value;
+
+  if (!name || !phone || !address || !eventDate) {
+    alert("Please fill all details ❌");
+    return;
+  }
+
+  bookingDraft = {
+    name,
+    phone,
+    address,
+    event_date: eventDate,
+    time_slot: timeSlot,
+    theme_name: state.currentTheme.name,
+    price: state.currentTheme.price
+  };
+
+  router("payment");
+}
+
+function confirmPayment() {
+
+  if (!bookingDraft || !bookingDraft.name) {
+    alert("Booking data missing ❌");
+    return;
+  }
+
+// 🔥 ADD THIS LINE
+bookingDraft.email = localStorage.getItem("userEmail");
+
+fetch("http://localhost:3000/api/bookings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        ...bookingDraft,
+        email: localStorage.getItem("userEmail")   // 🔥 ADD THIS
+    })
+})
+.then(res => res.json())
+.then(data => {
+    if (data.success) {
+        alert("Payment Successful ✅");
+        router("tracking");
+    } else {
+        alert("Booking Failed ❌");
+    }
+})
+.catch(err => {
+    console.error(err);
+    alert("Server Error ❌");
+});
+}
+function loadUserBookings() {
+
+  const email = localStorage.getItem("userEmail");
+  const container = document.getElementById("user-bookings-container");
+
+  if (!email) {
+    container.innerHTML = "<p>Please login first.</p>";
+    return;
+  }
+
+  fetch(`/api/user-bookings/${email}`)
+    .then(res => res.json())
+    .then(bookings => {
+
+      if (!bookings || bookings.length === 0) {
+        container.innerHTML = "<p>No bookings found.</p>";
+        return;
+      }
+
+      container.innerHTML = bookings.map(b => `
+        <div class="bg-white p-5 rounded-xl shadow-md border border-gray-100">
+          <h3 class="text-lg font-bold text-renova-green mb-2">${b.theme_name}</h3>
+          <p><strong>Date:</strong> ${new Date(b.event_date).toLocaleDateString()}</p>
+          <p><strong>Time Slot:</strong> ${b.time_slot}</p>
+          <p><strong>Status:</strong> 
+            <span class="${
+              b.order_status === 'Confirmed'
+                ? 'text-green-600 font-semibold'
+                : b.order_status === 'Rejected'
+                ? 'text-red-600 font-semibold'
+                : 'text-yellow-600 font-semibold'
+            }">
+              ${b.order_status}
+            </span>
+          </p>
+          <p><strong>Payment:</strong> ${b.payment_status}</p>
+        </div>
+      `).join("");
+
+    })
+    .catch(err => {
+      console.error(err);
+      container.innerHTML = "<p>Error loading bookings.</p>";
+    });
+}
+        function showAddThemeModal(category) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">Add Theme to "${category}"</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Theme Name</label>
+                            <input type="text" placeholder="e.g. Floral Garden Theme 🌸" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-renova-lightGreen outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Base Price (₹)</label>
+                            <input type="number" placeholder="3500" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-renova-lightGreen outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
+                            <input type="url" placeholder="https://..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-renova-lightGreen outline-none">
+                        </div>
+                        <button onclick="this.closest('.fixed').remove(); showToast('Theme added successfully!','success')" class="w-full bg-renova-green text-white py-2.5 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">
+                            Add Theme
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showEditThemeModal(themeName) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg">Edit Theme</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Theme Name</label>
+                            <input type="text" value="${themeName}" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-renova-lightGreen outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                            <select class="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none">
+                                <option>Active</option>
+                                <option>Inactive</option>
+                            </select>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove(); showToast('Theme updated!','success')" class="w-full bg-renova-green text-white py-2.5 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Toast Helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colorClass = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            toast.className = `toast ${colorClass} text-white px-6 py-3 rounded-lg shadow-lg mb-3 flex items-center gap-3`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            // Trigger animation
+            requestAnimationFrame(() => toast.classList.add('show'));
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for Admin Role in LocalStorage to show button
+            const userRole = localStorage.getItem("role");
+            const adminBtn = document.getElementById('admin-nav-btn');
+            
+            if (userRole === "admin" && adminBtn) {
+                adminBtn.classList.remove('hidden');
+            }
+
+            // Initialize Router
+            router('home');
+        });
+// 🔹 Load bookings in Admin Panel
+async function loadAdminBookings() {
+  const response = await fetch("http://localhost:3000/api/admin/bookings");
+  const data = await response.json();
+
+  const tableBody = document.getElementById("admin-orders-body");
+  tableBody.innerHTML = "";
+
+  data.forEach(booking => {
+    tableBody.innerHTML += `
+      <tr>
+        <td>${booking.id}</td>
+        <td>${booking.name}</td>
+        <td>${booking.theme_name}</td>
+        <td>${new Date(booking.event_date).toLocaleDateString()}</td>
+        <td>${booking.order_status}</td>
+        <td>${booking.payment_status}</td>
+        <td>
+          ${
+            booking.order_status === "Pending"
+              ? `
+                <button onclick="updateBookingStatus(${booking.id}, 'accept')">✔</button>
+                <button onclick="updateBookingStatus(${booking.id}, 'reject')">❌</button>
+              `
+              : "N/A"
+          }
+        </td>
+      </tr>
+    `;
+  });
+}
+
+
+// 🔹 Accept / Reject function
+async function updateBookingStatus(id, action) {
+  const response = await fetch(`http://localhost:3000/api/admin/bookings/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action })
+  });
+
+  const result = await response.json();
+  alert(result.message);
+
+  loadAdminBookings(); // refresh table
+}
+
+function loadMyBookings() {
+
+  const email = localStorage.getItem("userEmail");
+
+  if(!email){
+    document.getElementById("user-bookings-container").innerHTML =
+      "<p>Please login to see your bookings.</p>";
+    return;
+  }
+
+  fetch(`/api/user-bookings/${email}`)
+    .then(res => res.json())
+    .then(data => {
+
+      if(data.length === 0){
+        document.getElementById("user-bookings-container").innerHTML =
+          "<p>No bookings found.</p>";
+        return;
+      }
+
+      const bookingsHTML = data.map(order => {
+
+        let statusText = "";
+
+        if(order.order_status === "Confirmed"){
+          statusText = `<span class="text-green-600 font-bold">Order Confirmed ✅</span>`;
+        }
+        else if(order.order_status === "Rejected"){
+          statusText = `<span class="text-red-600 font-bold">Refund Processing 💸</span>`;
+        }
+        else{
+          statusText = `<span class="text-yellow-600 font-bold">Pending ⏳</span>`;
+        }
+
+        return `
+          <div class="p-4 border rounded bg-white shadow">
+            <h3 class="font-bold">${order.theme_name}</h3>
+            <p>Date: ${new Date(order.event_date).toLocaleDateString()}</p>
+            <p>${statusText}</p>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("user-bookings-container").innerHTML = bookingsHTML;
+
+    })
+    .catch(err => console.log(err));
+}
+</script>
+</body>
+</html>

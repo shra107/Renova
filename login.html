@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RENOVA Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-green-100 to-green-200 flex items-center justify-center h-screen">
+
+  <div class="bg-white p-8 rounded-xl shadow-xl w-96">
+    <h2 class="text-2xl font-bold text-center mb-6 text-green-700">RENOVA Login</h2>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <input id="loginEmail" type="email" placeholder="Email"
+        class="w-full mb-3 p-2 border rounded">
+      <input id="loginPassword" type="password" placeholder="Password"
+        class="w-full mb-3 p-2 border rounded">
+
+      <button onclick="loginUser()"
+        class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">
+        Login
+      </button>
+
+      <p class="text-sm text-center mt-4">
+        Don't have account?
+        <span onclick="showRegister()" class="text-green-600 cursor-pointer">Register</span>
+      </p>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm" class="hidden">
+      <input id="regName" type="text" placeholder="Full Name"
+        class="w-full mb-3 p-2 border rounded">
+      <input id="regEmail" type="email" placeholder="Email"
+        class="w-full mb-3 p-2 border rounded">
+      <input id="regPassword" type="password" placeholder="Password"
+        class="w-full mb-3 p-2 border rounded">
+
+      <button onclick="registerUser()"
+        class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">
+        Register
+      </button>
+
+      <p class="text-sm text-center mt-4">
+        Already have account?
+        <span onclick="showLogin()" class="text-green-600 cursor-pointer">Login</span>
+      </p>
+    </div>
+
+    <p id="message" class="text-center text-red-500 mt-3"></p>
+
+  </div>
+
+<script>
+
+function showRegister() {
+  document.getElementById("loginForm").classList.add("hidden");
+  document.getElementById("registerForm").classList.remove("hidden");
+}
+
+function showLogin() {
+  document.getElementById("registerForm").classList.add("hidden");
+  document.getElementById("loginForm").classList.remove("hidden");
+}
+
+function registerUser() {
+  const name = document.getElementById("regName").value;
+  const email = document.getElementById("regEmail").value;
+  const password = document.getElementById("regPassword").value;
+
+  fetch("/api/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success){
+      document.getElementById("message").innerText = "Registered Successfully ✅";
+      showLogin();
+    } else {
+      document.getElementById("message").innerText = data.message;
+    }
+  });
+}
+
+function loginUser() {
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+
+  fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if(data.success){
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("name", data.name);
+
+      if(data.role === "admin"){
+        window.location.href = "/renova?admin=true";
+      } else {
+        window.location.href = "/renova";
+      }
+
+    } else {
+      document.getElementById("message").innerText = data.message;
+    }
+
+  });
+}
+
+</script>
+
+</body>
+</html>
