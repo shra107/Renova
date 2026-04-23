@@ -161,27 +161,32 @@
 
 <script>
 // ── THEME DATA ──────────────────────────────────────────────────────────────
+// Real images sourced from celebrationmanagement.com
+const CM = "https://celebrationmanagement.com/super_admin/uploads/";
 const themeImages = {
-    "Princess Theme..👸":["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=600&h=400&fit=crop"],
-    "Unicorn Theme..🦄":["https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=400&fit=crop"],
-    "Romantic Candle theme..🕯️😍":["https://images.unsplash.com/photo-1519225468850-7251d0e8d67e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&h=400&fit=crop"],
-    "Golden Anniversary Stage..✨":["https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1478146059778-26028b07395a?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&h=400&fit=crop"],
-    "Kids Cartoon Theme..🤩🃏":["https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop"],
-    "Diwali Floral Decor🎇🎉":["https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop"],
-    "Ganesh Chaturthi Setup🙏🏻🤩":["https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop"],
-    "Navratri Garba Theme🎇":["https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop"],
-    "Makar Sankranti/ Bornhahan 🎉":["https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop"],
-    "Holi Color Splash🎨":["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop"],
-    "Griha Pravesh Traditional🏡✨":["https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1574169208507-84376144848b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&h=400&fit=crop"],
-    "Suhagraat Decoration😍🏡":["https://images.unsplash.com/photo-1519225468850-7251d0e8d67e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&h=400&fit=crop"],
-    "Baby Shower Teddy Theme🧸😍/Little Krishna👶🏻😍":["https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop"],
-    "Welcome Baby Setup 👶🏻🎉":["https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=400&fit=crop"],
-    "Rainbow Theme🌈/Moon🌙 & Stars✨":["https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop"]
+    // Birthday & Anniversary — real decoration photos
+    "Princess Theme..👸":[CM+"scat/2391862023-03-14.jpg", CM+"scat/4946842025-02-26.png", CM+"8686472021-03-15.jpg"],
+    "Unicorn Theme..🦄":[CM+"scat/4946842025-02-26.png", CM+"scat/2391862023-03-14.jpg", CM+"8686472021-03-15.jpg"],
+    "Romantic Candle theme..🕯️😍":[CM+"scat/3026432025-02-27.png", CM+"scat/4771182022-08-22.jpg", CM+"scat/5424662025-02-27.png"],
+    "Golden Anniversary Stage..✨":[CM+"scat/5424662025-02-27.png", CM+"scat/3026432025-02-27.png", CM+"scat/4771182022-08-22.jpg"],
+    "Kids Cartoon Theme..🤩🃏":[CM+"scat/4321752023-03-14.jpg", CM+"scat/4946842025-02-26.png", CM+"8686472021-03-15.jpg"],
+    // Festival — using terrace/balloon/theme images
+    "Diwali Floral Decor🎇🎉":[CM+"scat/1365802021-05-13.jpg", CM+"scat/8446512021-07-26.png", CM+"scat/923582021-04-07.png"],
+    "Ganesh Chaturthi Setup🙏🏻🤩":[CM+"scat/923582021-04-07.png", CM+"scat/1365802021-05-13.jpg", CM+"scat/8446512021-07-26.png"],
+    "Navratri Garba Theme🎇":[CM+"scat/8446512021-07-26.png", CM+"scat/923582021-04-07.png", CM+"scat/1365802021-05-13.jpg"],
+    "Makar Sankranti/ Bornhahan 🎉":[CM+"scat/4946842025-02-26.png", CM+"scat/8446512021-07-26.png", CM+"scat/1365802021-05-13.jpg"],
+    "Holi Color Splash🎨":[CM+"scat/923582021-04-07.png", CM+"scat/4946842025-02-26.png", CM+"scat/8446512021-07-26.png"],
+    // Housewarming & Baby Shower
+    "Griha Pravesh Traditional🏡✨":[CM+"scat/1365802021-05-13.jpg", CM+"scat/5424662025-02-27.png", CM+"scat/3026432025-02-27.png"],
+    "Suhagraat Decoration😍🏡":[CM+"scat/3026432025-02-27.png", CM+"scat/5424662025-02-27.png", CM+"scat/4771182022-08-22.jpg"],
+    "Baby Shower Teddy Theme🧸😍/Little Krishna👶🏻😍":[CM+"scat/2751122022-04-04.png", CM+"scat/1124842025-03-19.png", CM+"scat/8446512021-07-26.png"],
+    "Welcome Baby Setup 👶🏻🎉":[CM+"scat/1124842025-03-19.png", CM+"scat/2751122022-04-04.png", CM+"scat/4946842025-02-26.png"],
+    "Rainbow Theme🌈/Moon🌙 & Stars✨":[CM+"scat/4946842025-02-26.png", CM+"scat/1124842025-03-19.png", CM+"scat/2751122022-04-04.png"]
 };
 const categoryImages = {
-    "Birthday & Anniversary":"https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop",
-    "Festival":"https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=400&h=300&fit=crop",
-    "Housewarming & Baby Shower":"https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&h=300&fit=crop"
+    "Birthday & Anniversary": CM+"8686472021-03-15.jpg",
+    "Festival": CM+"scat/1365802021-05-13.jpg",
+    "Housewarming & Baby Shower": CM+"scat/1124842025-03-19.png"
 };
 const themeDataStructure = {
     "Birthday & Anniversary":["Princess Theme..👸","Unicorn Theme..🦄","Romantic Candle theme..🕯️😍","Golden Anniversary Stage..✨","Kids Cartoon Theme..🤩🃏"],
@@ -191,7 +196,7 @@ const themeDataStructure = {
 const categories = Object.keys(themeDataStructure);
 const variationNames = ["Classic","Premium","Minimalist"];
 let themesData = [];
-const fallbackImgs = ["https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1519225468850-7251d0e8d67e?w=600&h=400&fit=crop","https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&h=400&fit=crop"];
+const fallbackImgs = [CM+"8686472021-03-15.jpg", CM+"scat/5424662025-02-27.png", CM+"scat/1124842025-03-19.png"];
 categories.forEach((cat,ci)=>{
     themeDataStructure[cat].forEach((name,i)=>{
         const base=3000+Math.floor(Math.random()*4000);
@@ -400,7 +405,7 @@ home: () => `
              style="transform:rotateY(-8deg) rotateX(4deg);transform-style:preserve-3d;transition:transform 0.4s ease;"
              onmousemove="this.style.transform='rotateY('+(-(event.offsetX-170)/18)+'deg) rotateX('+(event.offsetY-210)/18+'deg)'"
              onmouseleave="this.style.transform='rotateY(-8deg) rotateX(4deg)'">
-          <img src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=700&h=900&fit=crop" alt="Eco Party Decoration" class="w-full h-full object-cover">
+          <img src="https://celebrationmanagement.com/super_admin/uploads/8686472021-03-15.jpg" alt="Eco Party Decoration" class="w-full h-full object-cover">
           <div class="absolute inset-0 bg-gradient-to-t from-renova-dark/60 via-transparent to-transparent"></div>
           <div class="absolute bottom-5 left-5 right-5"><p class="text-white font-bold text-lg">Premium Eco Decor</p><p class="text-white/70 text-xs">Reusable · Sustainable · Beautiful</p></div>
         </div>
